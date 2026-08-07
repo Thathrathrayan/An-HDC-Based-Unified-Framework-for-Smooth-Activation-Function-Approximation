@@ -32,7 +32,14 @@ wire signed [15:0] abs_x = is_positive ? x_in : -x_in;
 wire out_of_bounds = (abs_x > 16'd4096);
 
 // Nearest Rounding Division via Hardware Divider
-wire [15:0] rounded_index = (abs_x + 16'd51) / 16'd102; 
+// 1. Add rounding offset (Half of 102.4 is approx 51)
+wire [15:0] val = abs_x + 16'd51;
+
+// 2. Multiply by 5 using Shift-and-Add (val * 5 = val + val*4)
+wire [15:0] val_times_5 = val + (val << 2);
+
+// 3. Divide by 512 via Bit-Shift
+wire [15:0] rounded_index = val_times_5 >> 9;
 wire [5:0] raw_index = (rounded_index >= 16'd40) ? 6'd40 : rounded_index[5:0];
 wire [5:0] input_index = 6'd40 - raw_index;
 
